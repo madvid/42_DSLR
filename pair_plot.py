@@ -22,7 +22,12 @@ if __name__ == "__main__":
 				 "Charms" : np.float32,
 				 "Flying" : np.float32}
 	
-	df = read_csv("datasets/dataset_train.csv", dtype=dct_types)
+	try:
+		df = read_csv("datasets/dataset_train.csv", dtype=dct_types)
+	except:
+		print(RED + "At least one column is missing or is not of excpected dtype." + END)
+		sys.exit()
+
 	name_cols = df.columns.values
 
 	# --- Basic verification on the dataset -- #
@@ -45,7 +50,7 @@ if __name__ == "__main__":
 	df.rename(columns={"History of Magic":"History\nof Magic"}, inplace=True)
 	
 	df.dropna(inplace=True)
-	df = df.sample(n=int(0.2 * df.shape[0])) # sampling because the dataset is big and take time to plot
+	df = df.sample(n=int(0.25 * df.shape[0])) # sampling because the dataset is big and take time to plot
 
 	# --- Plotting part -- #
 	dct_palet = {"Hufflepuff":"dodgerblue", "Gryffindor":"red", "Slytherin":"green", "Ravenclaw":"goldenrod"}
@@ -54,13 +59,6 @@ if __name__ == "__main__":
 								hue="Hogwarts House",
 								palette=dct_palet,
 								plot_kws=dict(s=10, alpha=0.6),
-								height=0.95, aspect=1.5, corner=True)
+								height=0.95, aspect=1.4, corner=True)
+	sns_pairplot._legend.set_bbox_to_anchor((0.6, 0.6))
 	plt.show()
-	#sns_pairplot.savefig("pairplot.png")
-	#plt.clf()
-	
-	#fig, axe = plt.subplots(1,1)
-	#img = pltimg.imread('pairplot.png')
-	#imgplot = plt.imshow(img)
-	#img
-	#ax.axis("off")

@@ -2,7 +2,7 @@ from pandas import read_csv
 import matplotlib.pyplot as plt
 import seaborn as sns
 import sys
-from utils import expected_col, RED, END
+from constants import expected_col, RED, END
 
 
 if __name__ == "__main__":
@@ -26,27 +26,35 @@ if __name__ == "__main__":
 	# -- Minor formatting of the datafram -- #
 	df["Birthday"] = df["Birthday"].astype("datetime64")
 
-
-
+	for c in ["Index", "Hogwarts House", "First Name", "Last Name", "Best Hand"]:
+		try:
+			expected_col.remove(c)
+		except:
+			continue
+	
+	if not all([typ in ["float64", "int64", "datetime64[ns]"] for typ  in df[expected_col].dtypes]):
+		print(RED + "At least one column is not of excpected dtype." + END)
+		sys.exit()
+	
 	# --- Plotting part -- #
 	c_palet = ["goldenrod", "green", "red", "dodgerblue"]
 	fig, axes = plt.subplots(3, 5, figsize=(20, 12))
 
-	sns.histplot(data=df, x="Birthday", hue="Hogwarts House", stat="probability", binwidth=90, palette=c_palet, multiple="dodge", legend=None, ax=axes[0,0])
-	sns.histplot(data=df, x="Best Hand", hue="Hogwarts House", stat="probability", palette=c_palet, multiple="dodge", legend=None, ax=axes[0,1])
-	sns.histplot(data=df, x="Arithmancy", hue="Hogwarts House", stat="probability", palette=c_palet, multiple="dodge", legend=None, ax=axes[0,2])
-	sns.histplot(data=df, x="Astronomy", hue="Hogwarts House", stat="probability", palette=c_palet, multiple="dodge", legend=None, ax=axes[0,3])
-	sns.histplot(data=df, x="Herbology", hue="Hogwarts House", stat="probability", palette=c_palet, multiple="dodge", legend=None, ax=axes[0,4])
-	sns.histplot(data=df, x="Defense Against the Dark Arts", hue="Hogwarts House", stat="probability", palette=c_palet, multiple="dodge", legend=None, ax=axes[1,0])
-	sns.histplot(data=df, x="Divination", hue="Hogwarts House", stat="probability", palette=c_palet, multiple="dodge", legend=None, ax=axes[1,1])
-	sns.histplot(data=df, x="Muggle Studies", hue="Hogwarts House", stat="probability", palette=c_palet, multiple="dodge", legend=None, ax=axes[1,2])
-	sns.histplot(data=df, x="Ancient Runes", hue="Hogwarts House", stat="probability", palette=c_palet, multiple="dodge", legend=None, ax=axes[1,3])
-	sns.histplot(data=df, x="History of Magic", hue="Hogwarts House", stat="probability", palette=c_palet, multiple="dodge", legend=None, ax=axes[1,4])
-	sns.histplot(data=df, x="Transfiguration", hue="Hogwarts House", stat="probability", palette=c_palet, multiple="dodge", legend=None, ax=axes[2,0])
-	sns.histplot(data=df, x="Potions", hue="Hogwarts House", stat="probability", palette=c_palet, multiple="dodge", legend=None, ax=axes[2,1])
-	sns.histplot(data=df, x="Care of Magical Creatures", hue="Hogwarts House", stat="probability", palette=c_palet, multiple="dodge", legend=None, ax=axes[2,2])
-	sns.histplot(data=df, x="Charms", hue="Hogwarts House", stat="probability", palette=c_palet, multiple="dodge", legend=None, ax=axes[2,3])
-	sns.histplot(data=df, x="Flying", hue="Hogwarts House", stat="probability", palette=c_palet, multiple="dodge", legend=None, ax=axes[2,4])
+	sns.histplot(data=df, x="Birthday", hue="Hogwarts House", stat="probability", binwidth=90, palette=c_palet, multiple="dodge", legend=None, ax=axes[0,0], common_norm=False)
+	sns.histplot(data=df, x="Best Hand", hue="Hogwarts House", stat="probability", palette=c_palet, multiple="dodge", legend=None, ax=axes[0,1], common_norm=False)
+	sns.histplot(data=df, x="Arithmancy", hue="Hogwarts House", stat="probability", palette=c_palet, multiple="dodge", legend=None, ax=axes[0,2], common_norm=False)
+	sns.histplot(data=df, x="Astronomy", hue="Hogwarts House", stat="probability", palette=c_palet, multiple="dodge", legend=None, ax=axes[0,3], common_norm=False)
+	sns.histplot(data=df, x="Herbology", hue="Hogwarts House", stat="probability", palette=c_palet, multiple="dodge", legend=None, ax=axes[0,4], common_norm=False)
+	sns.histplot(data=df, x="Defense Against the Dark Arts", hue="Hogwarts House", stat="probability", palette=c_palet, multiple="dodge", legend=None, ax=axes[1,0], common_norm=False)
+	sns.histplot(data=df, x="Divination", hue="Hogwarts House", stat="probability", palette=c_palet, multiple="dodge", legend=None, ax=axes[1,1], common_norm=False)
+	sns.histplot(data=df, x="Muggle Studies", hue="Hogwarts House", stat="probability", palette=c_palet, multiple="dodge", legend=None, ax=axes[1,2], common_norm=False)
+	sns.histplot(data=df, x="Ancient Runes", hue="Hogwarts House", stat="probability", palette=c_palet, multiple="dodge", legend=None, ax=axes[1,3], common_norm=False)
+	sns.histplot(data=df, x="History of Magic", hue="Hogwarts House", stat="probability", palette=c_palet, multiple="dodge", legend=None, ax=axes[1,4], common_norm=False)
+	sns.histplot(data=df, x="Transfiguration", hue="Hogwarts House", stat="probability", palette=c_palet, multiple="dodge", legend=None, ax=axes[2,0], common_norm=False)
+	sns.histplot(data=df, x="Potions", hue="Hogwarts House", stat="probability", palette=c_palet, multiple="dodge", legend=None, ax=axes[2,1], common_norm=False)
+	sns.histplot(data=df, x="Care of Magical Creatures", hue="Hogwarts House", stat="probability", palette=c_palet, multiple="dodge", legend=None, ax=axes[2,2], common_norm=False)
+	sns.histplot(data=df, x="Charms", hue="Hogwarts House", stat="probability", palette=c_palet, multiple="dodge", legend=None, ax=axes[2,3], common_norm=False)
+	sns.histplot(data=df, x="Flying", hue="Hogwarts House", stat="probability", palette=c_palet, multiple="dodge", legend=None, ax=axes[2,4], common_norm=False)
 
 	axes[0,1].set_ylabel("")
 	axes[0,2].set_ylabel("")

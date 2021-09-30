@@ -23,6 +23,10 @@ if __name__ == "__main__":
 		print(RED + "Dataset seems to be empty." + END)
 		sys.exit()
 	
+	if (df["Astronomy"].dtype != "float64") | (df["Defense Against the Dark Arts"].dtype != "float64"):
+		print(RED + "Expected data type is float64 for both columns." + END)
+		sys.exit()
+	
 	# --- Plotting part -- #
 	c_palet = ["goldenrod", "green", "red", "dodgerblue"]
 	sns.scatterplot(data=df, x="Astronomy", y="Defense Against the Dark Arts", hue="Hogwarts House", palette=c_palet)
