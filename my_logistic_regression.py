@@ -1,7 +1,8 @@
 import numpy as np
 import pandas as pd
 
-
+# small value to avoid ZeroDivisionError or RuntimeWarning due to invalid value encountered in long_scalars
+eps = 1e-8
 class MyLogisticRegression():
 	"""
 	...Docstring...
@@ -36,28 +37,25 @@ class MyLogisticRegression():
 		else:
 			self.gamma = 0.0
 		
-		if not method in ["GD", "SGD", "minibtach", "GD+momentum", "SGD+momentum"]:
+		if not method in ["GD", "SGD", "SGD+momentum", "minibatch"]:
 			self.method = "GD"
 		else:
 			self.method = method
 		
-		if self.method == "SGD":
+		if self.method == "GD":
+			self.fit_ = self._fit_
+		elif self.method == "SGD":
 			self.fit_ = self._stochastic_fit_
 		elif self.method == "minibatch":
 			self.fit_ = self._minibatch_fit_
-		elif self.method == "GD+momentum":
-			self.fit_ = self._fit_w_momentum_
 		elif self.method == "SGD+momentum":
 			self.fit_ = self._stochastic_fit_w_momentum_
-		elif self.method == "minibtach+momentum":
-			self.fit_ == self._minibatch_fit_w_momentum_
 	
 	
 	def predict_(self, x:np.ndarray):
 		"""
 		...Docstring...
 		"""
-		#print(f"x.shape[1] = {x.shape[1]} -- theta.shape[0] = {self.theta.shape[0]}")
 		if x.shape[1] != self.theta.shape[0]:
 			str_err = "Mismatching shape between x and theta."
 			raise Exception(str_err)
@@ -94,11 +92,11 @@ class MyLogisticRegression():
 		return dJ.reshape(-1,1)
 
 	
-	def fit_(self, x:np.ndarray, y:np.ndarray, n_cycle:int=None):
+	def _fit_(self, x:np.ndarray, y:np.ndarray, n_cycle=None):
 		"""
 		...Docstring...
 		"""
-		if n_cycle is None:
+		if type(n_cycle) is type(None):
 			n_cycle = self.max_iter
 		for _ in range(n_cycle):
 			dJ = self.grad_(x,y)
@@ -107,16 +105,15 @@ class MyLogisticRegression():
 		return (self.theta, self.b)
 
 
-	def _stochastic_fit_(self, x:np.ndarray, y:np.ndarray, n_cycle:int=None):
+	def _stochastic_fit_(self, x:np.ndarray, y:np.ndarray, n_cycle=None):
 		"""
 		...Docstring...
 		"""
 		m = x.shape[0]
-		if n_cycle is None:
-			n_cyle = self.max_iter
-		for _ in range(n_cycle):
-			r = np.random.randint(m)
-			dJ = self.grad_(x[r,:].reshape(1,-1),y[r,:].reshape(1,-1))
+		if type(n_cycle) is type(None):
+			n_cycle = self.max_iter
+		for ii in range(n_cycle):
+			dJ = self.grad_(x[ii % m,:].reshape(1,-1),y[ii % m,:].reshape(1,-1))
 			self.b = self.b - self.alpha * dJ[0]
 			self.theta = self.theta - self.alpha * dJ[1:]
 		return (self.theta, self.b)
@@ -150,15 +147,14 @@ class MyLogisticRegression():
 		return mini_batches
 
 
-	def _minibatch_fit_(self, mini_batches:list, n_cycle:int=None):
+	def _minibatch_fit_(self, mini_batches:list, n_cycle=None):
 		"""
 		...Docstring...
 		"""
 		n_mini_batches = len(mini_batches)
-		
-		if n_cycle is None:
-			n_cyle = self.max_iter
-		
+		self.n_mini_batches = n_mini_batches
+		if type(n_cycle) is type(None):
+			n_cycle = self.max_iter
 		for _ in range(n_cycle):
 			r = np.random.randint(n_mini_batches)
 			X_minibatch, Y_minibatch = mini_batches[r]
@@ -167,53 +163,22 @@ class MyLogisticRegression():
 			self.theta = self.theta - self.alpha * dJ[1:]
 		return (self.theta, self.b)
 
-	def _fit_w_momentum_(self, x:np.ndarray, y:np.ndarray, n_cycle:int=None):
-		
-		"""
-		...Docstring...
-		"""
-		if n_cycle is None:
-			n_cycle = self.max_iter
-		for _ in range(n_cycle):
-			dJ = self.grad_(x,y)
-			self.b = self.b - (self.gamma * self.past_db + self.alpha * dJ[0])
-			self.theta = self.theta - (self.gamma * self.past_dtheta - self.alpha * dJ[1:])
-			self.past_db, self.past_dtheta = dJ[0], dJ[1:]
-		return (self.theta, self.b)
 
-
-	def _stochastic_fit_w_momentum_(self, x:np.ndarray, y:np.ndarray, n_cycle:int=None):
+	def _stochastic_fit_w_momentum_(self, x:np.ndarray, y:np.ndarray, n_cycle=None):
 		
 		"""
 		...Docstring...
 		"""
 		m = x.shape[0]
-		if n_cycle is None:
-			n_cyle = self.max_iter
-		for _ in range(n_cycle):
-			r = np.random.randint(m)
-			dJ = self.grad_(x[r,:].reshape(1,-1),y[r,:].reshape(1,-1))
-			self.b = self.b - (self.gamma * self.past_db + self.alpha * dJ[0])
-			self.theta = self.theta - (self.gamma * self.past_dtheta + self.alpha * dJ[1:])
+		if type(n_cycle) is type(None):
+			n_cycle = self.max_iter
+		for ii in range(n_cycle):
+			dJ = self.grad_(x[ii % m,:].reshape(1,-1),y[ii % m,:].reshape(1,-1))
+			self.b = self.b - self.alpha * dJ[0] - self.gamma * self.past_db
+			self.theta = self.theta - self.alpha * dJ[1:] - self.gamma * self.past_dtheta
 			self.past_db, self.past_dtheta = dJ[0], dJ[1:]
 		return (self.theta, self.b)
 
-
-	def _minibatch_fit_w_momentum_(self, mini_batches:list):
-		
-		"""
-		...Docstring...
-		"""
-		n_mini_batches = len(mini_batches)
-		for _ in range(self.max_iter):
-			r = np.random.randint(n_mini_batches)
-			X_minibatch, Y_minibatch = mini_batches[r]
-			dJ = self.grad_(X_minibatch, Y_minibatch)
-			self.b = self.b - (self.gamma * self.past_db + self.alpha * dJ[0])
-			self.theta = self.theta - (self.gamma * self.past_dtheta + self.alpha * dJ[1:])
-			self.past_db, self.past_dtheta = dJ[0], dJ[1:]
-		return (self.theta, self.b)
-	
 
 	def cost_(self, x:np.ndarray, y:np.ndarray):
 		"""
@@ -238,7 +203,7 @@ class MyLogisticRegression():
 		m = x.shape[0]
 		pred = self.predict_(x)
 		cost = -(1/m) * (np.multiply(y, np.log(pred + epsilon)) + np.multiply(1 - y, np.log(1 - pred + epsilon)))
-		cost = np.sum(cost, axis=0) + self.lambd * np.sum(np.square(self.theta))
+		cost = np.sum(cost, axis=0) + (0.5 / m) * self.lambd * np.sum(np.square(self.theta))
 		return cost
 
 
@@ -252,24 +217,64 @@ class MyLogisticRegressionWithHistory(MyLogisticRegression):
 		MyLogisticRegression.__init__(self, theta, b, alpha, max_iter, lambd, tag, gamma, method)
 		self.steps = steps
 		self.remind_iter = max_iter % int(max_iter / steps)
-		self.cycle_per_step = int(self.max_iter / steps)
-		self.theta_history = self.theta
-		self.b_history = self.b
+		self.cycle_per_step = int(max_iter / steps)
+		self.theta_history = theta
+		self.b_history = b
+
+		if not method in ["GD", "SGD", "SGD+momentum", "minibatch"]:
+			self.method = "GD"
+		else:
+			self.method = method
+		
+		if self.method == "GD":
+			self.fit_history_ = self._fit_history_
+		elif self.method == "SGD":
+			self.fit_history_ = self._stochastic_fit_history_
+		elif self.method == "SGD+momentum":
+			self.fit_history_ = self._stochastic_fit_w_momentum_history_
+		elif self.method == "minibatch":
+			self.fit_history_ = self._minibatch_fit_history_
 
 
 	def predict_history_(self, x:np.ndarray):
 		"""
 		... Docstring ...
 		"""
-		#if x.shape[1] != self.theta_history.shape[0]:
-		#	str_err = "Mismatching shape between x and theta_history."
-		#	raise Exception(str_err)
 		z = np.dot(x, self.theta_history) + self.b_history
 		pred = np.divide(1.0, 1.0 + np.exp(-z))
 		return pred
 
 
-	def fit_history_(self, x:np.ndarray, y:np.ndarray):
+	def _stochastic_fit_(self, x:np.ndarray, y:np.ndarray, start:int, n_cycle=None):
+		"""
+		...Docstring...
+		"""
+		m = x.shape[0]
+		if type(n_cycle) is type(None):
+			n_cycle = self.max_iter
+		for ii in range(n_cycle):
+			dJ = self.grad_(x[(start + ii) % m,:].reshape(1,-1),y[(start + ii) % m,:].reshape(1,-1))
+			self.b = self.b - self.alpha * dJ[0]
+			self.theta = self.theta - self.alpha * dJ[1:]
+		return (self.theta, self.b)
+
+
+	def _stochastic_fit_w_momentum_(self, x:np.ndarray, y:np.ndarray, start:int, n_cycle=None):
+		"""
+		...Docstring...
+		"""
+		m = x.shape[0]
+		if type(n_cycle) is type(None):
+			n_cycle = self.max_iter
+		for ii in range(n_cycle):
+			dJ = self.grad_(x[(start + ii) % m,:].reshape(1,-1),y[(start + ii) % m,:].reshape(1,-1))
+			self.b = self.b - self.alpha * dJ[0] - self.gamma * self.past_db
+			self.theta = self.theta - self.alpha * dJ[1:] - self.gamma * self.past_dtheta
+			self.past_db, self.past_dtheta = dJ[0], dJ[1:]
+		return (self.theta, self.b)
+
+
+	def _fit_history_(self, x:np.ndarray, y:np.ndarray):
 		"""
 		...Docstring...
 		"""
@@ -286,88 +291,51 @@ class MyLogisticRegressionWithHistory(MyLogisticRegression):
 		return (self.theta, self.b)
 
 
-	def stochastic_fit_history_(self, x:np.ndarray, y:np.ndarray):
+	def _stochastic_fit_history_(self, x:np.ndarray, y:np.ndarray):
 		"""
 		...Docstring...
 		"""
-		m = x.shape[0]
-		for _ in range(self.steps):
-			theta_b = self._stochastic_fit_(x, y, self.cycle_per_step)
+		for ii in range(self.steps):
+			theta_b = self.fit_(x, y, start=ii * self.cycle_per_step, n_cycle=self.cycle_per_step)
 			self.theta_history = np.hstack((self.theta_history, theta_b[0]))
 			self.b_history = np.hstack((self.b_history, theta_b[1]))
 
 		# -- Performing the last iterations -- #
-		theta_b = self._stochastic_fit_(x, y, self.remind_iter)
+		theta_b = self.fit_(x, y, start=ii * self.cycle_per_step, n_cycle=self.remind_iter)
 		self.theta_history = np.hstack((self.theta_history, theta_b[0]))
 		self.b_history = np.hstack((self.b_history, theta_b[1]))
 		
 		return (self.theta, self.b)
 
 
-	def minibatch_fit_history_(self, mini_batches:list, n_cycle:int=None):
-		"""
-		...Docstring...
-		"""
-		n_mini_batches = len(mini_batches)
-		for _ in  range(self.steps):
-			theta_b = self._minibatch_fit_(mini_batches, self.cycle_per_step)
-			self.theta_history = np.hstack((self.theta_history, theta_b[0]))
-			self.b_history = np.hstack((self.b_history, theta_b[1]))
-		
-		# -- Performing the last iterations -- #
-		theta_b = self._minibatch_fit_(mini_batches, self.remind_iter)
-		self.theta_history = np.hstack((self.theta_history, theta_b[0]))
-		self.b_history = np.hstack((self.b_history, theta_b[1]))
-		
-		return (self.theta, self.b)
-
-
-	def fit_w_momentum_history_(self, x:np.ndarray, y:np.ndarray):
+	def _minibatch_fit_history_(self, mini_batches:list, n_cycle=None):
 		"""
 		...Docstring...
 		"""
 		for _ in  range(self.steps):
-			theta_b = self._fit_w_momentum_(x, y, self.cycle_per_step)
+			theta_b = self.fit_(mini_batches, self.cycle_per_step)
 			self.theta_history = np.hstack((self.theta_history, theta_b[0]))
 			self.b_history = np.hstack((self.b_history, theta_b[1]))
 		
 		# -- Performing the last iterations -- #
-		theta_b = self._fit_w_momentum_(x,y, self.remind_iter)
+		theta_b = self.fit_(mini_batches, self.remind_iter)
 		self.theta_history = np.hstack((self.theta_history, theta_b[0]))
 		self.b_history = np.hstack((self.b_history, theta_b[1]))
 		
 		return (self.theta, self.b)
 
 
-	def stochastic_fit_w_momentum_history_(self, x:np.ndarray, y:np.ndarray):
+	def _stochastic_fit_w_momentum_history_(self, x:np.ndarray, y:np.ndarray):
 		"""
 		...Docstring...
 		"""
-		m = x.shape[0]
-		for _ in range(self.steps):
-			theta_b = self._stochastic_fit_w_momentum_(x, y, self.cycle_per_step)
+		for ii in range(self.steps):
+			theta_b = self.fit_(x, y, start=ii * self.cycle_per_step, n_cycle=self.cycle_per_step)
 			self.theta_history = np.hstack((self.theta_history, theta_b[0]))
 			self.b_history = np.hstack((self.b_history, theta_b[1]))
 
 		# -- Performing the last iterations -- #
-		theta_b = self._stochastic_fit_w_momentum_(x, y, self.remind_iter)
-		self.theta_history = np.hstack((self.theta_history, theta_b[0]))
-		self.b_history = np.hstack((self.b_history, theta_b[1]))
-		
-		return (self.theta, self.b)
-
-
-	def minibatch_fit_w_momentum_history_(self, mini_batches:list):
-		"""
-		...Docstring...
-		"""
-		for _ in  range(self.steps):
-			theta_b = self._minibatch_fit_w_momentum_(mini_batches, self.cycle_per_step)
-			self.theta_history = np.hstack((self.theta_history, theta_b[0]))
-			self.b_history = np.hstack((self.b_history, theta_b[1]))
-		
-		# -- Performing the last iterations -- #
-		theta_b = self._minibatch_fit_w_momentum_(mini_batches, self.remind_iter)
+		theta_b = self.fit_(x, y, start=ii * self.cycle_per_step, n_cycle=self.remind_iter)
 		self.theta_history = np.hstack((self.theta_history, theta_b[0]))
 		self.b_history = np.hstack((self.b_history, theta_b[1]))
 		
@@ -378,7 +346,6 @@ class MyLogisticRegressionWithHistory(MyLogisticRegression):
 		"""
 		... Docstring ...
 		"""
-		# TESTING PARAMETER
 		if x.ndim != 2:
 			str_err = "Incorrect dimension for x."
 			raise Exception(str_err)
@@ -427,7 +394,7 @@ class MyLogisticMetrics():
 		if (tp == 0) & (fp == 0) & (tn == 0) & (fn == 0):
 			accuracy = 0
 		else:
-			accuracy = (tp + tn) / (tp + tn + fp + fn)
+			accuracy = (tp + tn) / (tp + tn + fp + fn + eps)
 		return round(accuracy, 4)
 
 
@@ -451,7 +418,7 @@ class MyLogisticMetrics():
 		fp_arr = (y != pos_label) & (yhat == pos_label)
 		tp = tp_arr.sum()
 		fp = fp_arr.sum()
-		precision = tp / (tp + fp)
+		precision = tp / (tp + fp + eps)
 		return round(precision, 4)
 
 
@@ -475,11 +442,11 @@ class MyLogisticMetrics():
 		fn_arr = (y == pos_label) & (yhat != pos_label)
 		tp = tp_arr.sum()
 		fn = fn_arr.sum()
-		recall = tp / (tp + fn)
+		recall = tp / (tp + fn + eps)
 		return round(recall, 4)
 
 
-	def specificity_score_(y:np.ndarray, yhat:np.ndarray):
+	def specificity_score_(y:np.ndarray, yhat:np.ndarray, pos_label=1):
 		"""
 		...Docstring...
 		"""
@@ -492,16 +459,16 @@ class MyLogisticMetrics():
 		if yhat.shape != y.shape:
 			str_err = "Mismatching shape between yhat and y."
 			raise Exception(str_err)
-		tp_arr = (y == True) & (yhat == True)
-		fp_arr = (y == False) & (yhat == True)
-		tn_arr = (y == False) & (yhat == False)
-		fn_arr = (y == True) & (yhat == False)
+		tp_arr = (y == pos_label) & (yhat == pos_label)
+		fp_arr = (y != pos_label) & (yhat == pos_label)
+		tn_arr = (y != pos_label) & (yhat != pos_label)
+		fn_arr = (y == pos_label) & (yhat != pos_label)
 
 		tp = tp_arr.sum()
 		fp = fp_arr.sum()
 		tn = tn_arr.sum()
 		fn = fn_arr.sum()
-		specificity = tn / (tn + fp)
+		specificity = tn / (tn + fp + eps)
 		return round(specificity, 4)
 
 
@@ -509,7 +476,6 @@ class MyLogisticMetrics():
 		"""
 		...Docstring...
 		"""
-		epsilon = 1e-8
 		if yhat.ndim != 2:
 			str_err = "Incorrect dimension for yhat."
 			raise Exception(str_err)
@@ -521,7 +487,7 @@ class MyLogisticMetrics():
 			raise Exception(str_err)
 		precision = MyLogisticMetrics.precision_score_(y, yhat, pos_label)
 		recall = MyLogisticMetrics.recall_score_(y, yhat, pos_label)
-		f1 = 2 * precision * recall / (precision + recall + epsilon)
+		f1 = 2 * precision * recall / (precision + recall + eps)
 		return round(f1, 4)
 
 

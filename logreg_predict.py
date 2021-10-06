@@ -1,11 +1,25 @@
+# =========================================================================== #
+#                       |Importation des lib/packages|                        #
+# =========================================================================== #
+# --- librairies standards --- #
 import pandas as pd
 import numpy as np
 import sys
 
+# --- librairies locales --- #
 import tinystatistician as tinystat
 import my_logistic_regression as mylogr
 from utils import *
+from parsing import parser_predict
 
+# =========================================================================== #
+#                        | Definition des constantes|                         #
+# =========================================================================== #
+from constants import dct_types, target, lst_features, nb_features, RED, END
+
+# =========================================================================== #
+#                        | Definition des fonctions |                         #
+# =========================================================================== #
 def checking_features(columns:list, lst_features:list) -> bool:
 	"""
 	Parameters:
@@ -15,7 +29,7 @@ def checking_features(columns:list, lst_features:list) -> bool:
 		True/False [bool]: If all / not all the required features
 						   are in the dataframe. 
 	"""
-	if all([col in lst_features for col in columns]):
+	if all([feat in columns for feat in lst_features]):
 		return True
 	else:
 		return False
@@ -28,75 +42,32 @@ if __name__ == "__main__":
 	# ==== ==
 	# Parsing of arguments:
 	# ==== ==
-	b_visu = b_dynamic = b_static = b_console = False
-	
 	argv = sys.argv[1:]
-	if len(argv) == 1 and (argv[0] in ["-h", "--help", "--usage"]):
-		print_predict_usage()
-		sys.exit()
-	for arg in argv:
-		if (arg == "--graphic=console") and (b_visu == False):
-			b_visu = True
-			b_console = True
-		elif (arg == "--graphic=static") and (b_visu == False):
-			b_visu = True
-			b_static = True
-		elif (arg == "--graphic=dynamic") and (b_visu == False):
-			b_visu = True
-			b_dynamic = True
-		else:
-			ag_dataset = arg.split('=')
-			if len(ag_dataset) == 2:
-				if ag_dataset[0] == "--dataset":
-					...
-				else:
-					str_expt = "Dataset argument is incorrect."
-					raise Exception(str_expt)
-			elif arg not in lst_possible_args:
-				str_expt = "Invalid argument."
-				raise Exception(str_expt)
-			else:
-				str_expt = "Method or graphic argument cannot be define more than once."
-				raise Exception(str_expt)
-	
-	if b_visu == False:
-		b_console = True
-	
-	# ==== ==
-	# Retrieve of the data from the csv file dedicated for the training:
-	# ==== ==
-	dct_types = {"Arithmancy" : np.float32,
-				 "Astronomy" : np.float32,
-				 "Herbology" : np.float32,
-				 "Defense Against the Dark Arts" : np.float32,
-				 "Divination" : np.float32,
-				 "Muggle Studies" : np.float32,
-				 "Ancient Runes" : np.float32,
-				 "History of Magic" : np.float32,
-				 "Transfiguration" : np.float32,
-				 "Potions" : np.float32,
-				 "Care of Magical Creatures" : np.float32,
-				 "Charms" : np.float32,
-				 "Flying" : np.float32}
-	
-	df = open_read_data("datasets/dataset_test.csv", index_col="Index", dtypes=dct_types)
-	df.fillna(df.mean(),inplace=True)
-	target = "Hogwarts House"
-	lst_features = ["Herbology", "Divination", "Defense Against the Dark Arts",
-					"History of Magic", "Ancient Runes"]
-	nb_features = len(lst_features)
+	datapath, modelpath = parser_predict(argv)
 
+	# ==== ==
+	# Retrieve of the data from the csv file dedicated for the prediction:
+	# ==== ==
+	# -- Reading of the data from the csv file and checking
+	df = open_read_file(datapath, "predict")
+	if df is None:
+		str_exit = RED + f"Issue with file: {datapath}. Quitting the program." + END
+		print(str_exit)
+		sys.exit()
+	df.fillna(df.mean(),inplace=True)
+	
 	if not checking_features(df.columns.values, lst_features):
 		str_exit = "Issue with dataset of tests: possible missing features."
 		print(str_exit)
 		sys.exit()
 	
-	parameters = open_read_coeff(nb_features,4)
+	# -- Reading the parameters of the One-vs-all model
+	parameters = open_read_coeff(modelpath, nb_features, 4)
 	if parameters is None:
-		str_exit = "Issue with file: models.json. Quitting the program."
+		str_exit = RED + f"Issue with file: {modelpath}. Quitting the program." + END
 		print(str_exit)
 		sys.exit()
-	
+
 	df_features = df[lst_features].copy()
 	# ==== ==
 	# Standardization of the numerical data in the differents

@@ -18,26 +18,7 @@ from utils_graphic import *
 # =========================================================================== #
 #                        | Definition des constantes|                         #
 # =========================================================================== #
-
-# Les series d'intérêt dans le dataset de train ou de test sont les clefs du dct
-# suivant. Nous fixons le type de ces series
-dct_types = {"Arithmancy" : np.float32, "Astronomy" : np.float32,
-				 "Herbology" : np.float32, "Defense Against the Dark Arts" : np.float32,
-				 "Divination" : np.float32, "Muggle Studies" : np.float32,
-				 "Ancient Runes" : np.float32, "History of Magic" : np.float32,
-				 "Transfiguration" : np.float32, "Potions" : np.float32,
-				 "Care of Magical Creatures" : np.float32, "Charms" : np.float32,
-				 "Flying" : np.float32}
-
-# -- values to predict -- #
-target = "Hogwarts House"
-
-# -- features used in the models -- #
-lst_features = ["Arithmancy", "Herbology", "Defense Against the Dark Arts", "Divination",
-					"Muggle Studies", "Ancient Runes", "History of Magic", "Transfiguration"]
-
-# -- training / dev set ratio -- #
-split_ratio = 0.7
+from constants import dct_types, target, lst_features, nb_features, split_ratio
 
 # =========================================================================== #
 #                        | Definition des fonctions |                         #
@@ -85,18 +66,6 @@ def score_report(df:pd.DataFrame, metrics:list):
 			  mylogrmetrics.confusion_matrix_(df_res["Hogwarts House"].values.reshape(-1,1),
 											  df_res["predicted Hogwarts House"].values.reshape(-1,1)))
 
-
-# --------------------------------------------------------------------------- #
-# Functions definition related to the animated visualization                  #
-# --------------------------------------------------------------------------- #
-def animate_visu(clfs, x_train, y_train):
-	plt.style.use('seaborn-pastel')
-
-	dyn_visu = DynamicVisu(clfs, x_train, y_train)
-	dyn_visu.init_anim()
-	dyn_visu.anim()
-
-
 # =========================================================================== #
 # _________________________________  MAIN  __________________________________ #
 # =========================================================================== #
@@ -104,11 +73,16 @@ def animate_visu(clfs, x_train, y_train):
 if __name__ == "__main__":
 	# --- Parsing of the arguments -- #
 	argv = sys.argv[1:]
-	datapath, b_visu, b_static, b_console, b_gd, b_sgd, b_minibatch, b_method = parser(argv)
+	datapath, b_visu, b_static, b_console, b_gd, b_sgd, b_sgd_moment, \
+		b_minibatch, b_method = parser(argv)
 	
 	# -- Reading of the data from the csv file dedicated for the training -- #
-	df = open_read_data(datapath, index_col="Index", dtypes=dct_types)
-
+	df = open_read_file(datapath, "train")
+	if df is None:
+		str_exit = RED + f"Issue with file: {datapath}. Quitting the program." + END
+		print(str_exit)
+		sys.exit()
+	
 	df.fillna(df.mean(),inplace=True)
 	nb_features = len(lst_features)
 	df_m1 = df[lst_features + [target]].copy()
@@ -154,28 +128,34 @@ if __name__ == "__main__":
 		model = mylogr
 	if b_static:
 		model = mylogrwh
+	if not b_method:
+		method = "GD"
+	else:
+		lst_bool = [b_gd, b_sgd, b_sgd_moment, b_minibatch]
+		lst_methods = ["GD", "SGD", "SGD+momentum", "minibatch"]
+		method = [s_method for s_method, b in zip(lst_methods, lst_bool) if b][0]
 	clf1 = model(np.random.rand(nb_features, 1),
 				  alpha=1e-2,
 				  max_iter=10000,
-				  lambd=0.1, tag="Gryffindor", method="minibatch+momentum")
+				  lambd=0.0, tag="Gryffindor", method=method)
 	clf2 = model(np.random.rand(nb_features, 1),
 				  alpha=1e-2,
 				  max_iter=10000,
-				  lambd=0.1, tag="Slytherin", method="minibatch+momentum")
+				  lambd=0.0, tag="Slytherin", method=method)
 	clf3 = model(np.random.rand(nb_features, 1),
 				  alpha=1e-2,
 				  max_iter=10000,
-				  lambd=0.1, tag="Ravenclaw", method="minibatch+momentum")
+				  lambd=0.0, tag="Ravenclaw", method=method)
 	clf4 = model(np.random.rand(nb_features, 1),
 				  alpha=1e-2,
 				  max_iter=10000,
-				  lambd=0.1, tag="Hufflepuff", method="minibatch+momentum")
+				  lambd=0.0, tag="Hufflepuff", method=method)
 	clfs = [clf1, clf2, clf3, clf4]
-	
+
 	# ==== ==
 	# Fitting process for all logistic classifiers
 	# ==== ==
-	if b_gd:
+	if b_gd or b_sgd or b_sgd_moment:
 		# -- classic gradient descent -- #
 		i = 1
 		for clf in clfs:
@@ -183,15 +163,6 @@ if __name__ == "__main__":
 				clf.fit_history_(x_train.values, y_train[f"target clf{i}"].values.reshape(-1,1))
 			else:
 				clf.fit_(x_train.values, y_train[f"target clf{i}"].values.reshape(-1,1))
-			i += 1
-	elif b_sgd:
-		# -- stochastic gradient descent -- #
-		i = 1
-		for clf in clfs:
-			if b_static:
-				clf.stochastic_fit_history_(x_train.values, y_train[f"target clf{i}"].values.reshape(-1,1))
-			else:
-				clf.stochastic_fit_(x_train.values, y_train[f"target clf{i}"].values.reshape(-1,1))
 			i += 1
 	elif b_minibatch:
 		# -- minibatch gradient descent -- #
@@ -202,10 +173,10 @@ if __name__ == "__main__":
 
 		if b_static:
 			for clf, mini_batches_clf in zip(clfs, mini_batches_clfs):
-				clf.minibatch_fit_history_(mini_batches_clf)
+				clf.fit_history_(mini_batches_clf)
 		else:
 			for clf, mini_batches_clf in zip(clfs, mini_batches_clfs):
-				clf.minibatch_fit_(mini_batches_clf)
+				clf.fit_(mini_batches_clf)
 
 	# -- Saving the weights and biais of each classifier -- #
 	weights = np.concatenate((clf1.theta, clf2.theta, clf3.theta, clf4.theta), axis=1).T
@@ -239,11 +210,8 @@ if __name__ == "__main__":
 	# * In case of console mode, only score is printed.
 	# * In case of graphic=static, score is printed + a plot to see performance
 	# 	along the training phase.
-	# * In case of graphic=dynamic, score is printed + a dynamic plot to see
-	#	performance in "real time".
 	# ==== ==
 	score_report(df_res, ["accuracy", "precision", "recall", "F1", "Confusion matrix"])
 
 	if b_static:
-		#print(y_train.head(20))
 		static_plot(clfs, x_train, y_train, x_dev, y_dev)

@@ -33,10 +33,8 @@ if __name__ == "__main__":
 	if argv[0] in lst_usage:
 		usage_display()
 		exit()
-	elif (len(argv) == 1) and (argv[0] == "--dataset=all"):
-		df = open_read_file("all")
 	elif (len(argv) == 1) and (argv[0] in data_file):
-		df = open_read_file(argv[0].split("/")[1])
+		df = open_read_file(argv[0])
 	else:
 		print(invalid_arg)
 		exit()
