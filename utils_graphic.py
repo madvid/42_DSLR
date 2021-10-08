@@ -37,12 +37,12 @@ def static_plot(clfs, x_train, y_train, x_dev, y_dev):
 	axes[0].set_ylabel("Herbology")
 	axes[0].set_title("Decision boundary")
 	axes[1].set_xlabel("i: iteration")
-	axes[1].set_ylabel(r"$\mathcal{L}_{\theta_0,\theta_1}$")
+	axes[1].set_ylabel(r"$\mathcal{L}_{\mathrm{Hogwarts\/ House}}$")
 	axes[1].grid()
 	axes[2].set_xlabel("i: iteration")
 	axes[2].set_ylabel("Scores (Accuracy & Recall)")
 	axes[2].grid()
-	axes[2].set_ylim(0.0,1.00)
+	axes[2].set_ylim(0.4,1.00)
 	
 	# --Plotting the boundary decision, cost function and Precision & Recall -- #
 	plot_decision_boundary(clfs, x_train[["Defense Against the Dark Arts", "Herbology"]], y_train, axes[0])

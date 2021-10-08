@@ -109,4 +109,36 @@ Here the usage of the program (```python logreg_train.py -h/--help/--usage)
 ![logreg_train_usage](assets/logreg_train_usage.png)
 
 The model is constituted of 4 logistic classifiers, one for each class of ***Hogwarts House***.
-In the mandatory part, only the *gradient descent method* for the optimization and the *binary cross entropy* for the loss function are asked. Extra optimization methods were implemented, more details is given in the section **(a definir)**.
+In the mandatory part, only the *gradient descent* method for the optimization and the *binary cross entropy* for the loss function are asked. Extra optimization methods were implemented, more details is given in the section **Optimization**.
+
+The user has the possibility to tune 3 parameters: **graphic**, **method** and **dataset**.
+
+##### Graphic argument:
+For the **graphic parameter**, one has the choice between *console* and *static*. *console* value will only print the performance report in the terminal (see figure below).
+
+![logreg_train_console_only](assets/logreg_train_console_only.png)
+
+If the value is set to *static*, a matplotlib ```Figure``` with 3 ```Axes``` (see figure below). On the left hand side data from the training set are represented in the 2D plane (*Defense Against the Dark Arts-Herbology*) with the decision boundaries of the model. On the top rigth corner, one can see the evolution of the loss function (binary cross entropy) of each binary classifiers and finally on the bottom righ corner one can observe the evolution of the accuray (solid) and recall (dashed) of each classifiers. 
+
+![logreg_train_graphic](assets/logreg_train_graphic.png)
+
+##### Method argument:
+For the **method parameter**, one has the choice between *gradient-descent*, *stochastic-gradient-descent*, *stochastic-gradient-descent+momentum* and *minibatch*.
+The default optimization method is the "gradient-descent". More details about about the other optimization methods are given the **Bonus** section.
+
+#### Prediction:
+The prediction based on the trained *One-vs-All* model is realized by the program ```logreg_predict.py```.
+Here the usage of the program (```python logreg_predict.py -h/--help/--usage)
+
+![logreg_predict_usage](assets/logreg_predict_usage.png)
+## Bonus:
+
+### Optimization:
+#### Stochastic Gradient Descent:
+The Stochastic Gradient Descent (SGD) ...
+
+#### Stochastic Gradient Descent with Momentum:
+The Stochastic Gradient Descent with Momentum(SGD+m) ...
+
+#### Minibatch:
+The Minibatch ...
